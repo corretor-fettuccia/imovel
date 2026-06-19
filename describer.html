@@ -31,8 +31,9 @@
   <header class="header">
     <div class="brand"><div class="logo">JOKER</div><h1>Placeholder <span>10/10 Taxonômico</span></h1></div>
     <div class="actions">
-      <button onclick="exportConfig()"><i class="fa-solid fa-file-export"></i> Config</button>
-      <button onclick="document.getElementById('importConfig').click()"><i class="fa-solid fa-file-import"></i> Importar</button>
+      <button class="primary" onclick="exportPreset()"><i class="fa-solid fa-file-export"></i> Exportar Preset</button>
+      <button onclick="exportConfig()"><i class="fa-solid fa-gear"></i> Exportar Config</button>
+      <button onclick="document.getElementById('importConfig').click()"><i class="fa-solid fa-file-import"></i> Importar JSON</button>
       <input id="importConfig" type="file" accept=".json" hidden onchange="importConfigFile(event)">
       <button class="primary" onclick="generateJSON()"><i class="fa-solid fa-bolt"></i> Gerar JSON</button>
     </div>
@@ -62,7 +63,7 @@
         <h3><i class="fa-solid fa-code"></i> JSON Gerado</h3>
         <div class="actions">
           <button class="primary" onclick="copyJSON()"><i class="fa-solid fa-copy"></i> Copiar</button>
-          <button onclick="downloadJSON()"><i class="fa-solid fa-download"></i> Baixar</button>
+          <button onclick="exportPreset()"><i class="fa-solid fa-download"></i> Baixar Preset</button>
         </div>
       </div>
       <div class="preview" id="preview"><div class="empty"><i class="fa-solid fa-database"></i>Preencha e gere o preset JSON.</div></div>
@@ -135,12 +136,144 @@ function generateJSON(){const data=collect(), includeEmpty=document.getElementBy
 function addDerived(values,d,includeEmpty,includeSchema){const tipo=optLabel('propertyTypes',d.tipo);const loc=[d.logradouro,d.numero,d.bairro,d.cidade,d.uf].filter(Boolean).join(d.uf?' - ':', ');add(values,'JOKER-LOCAL-ENDERECO-COMPLETO',loc,includeEmpty); const resumo=[tipo,d.subtipo,d.dormitorios?`${d.dormitorios} dormitórios`:'',d.banheiros?`${d.banheiros} banheiros`:'',d.area_construida?`${d.area_construida} m² construídos`:'',d.bairro&&d.cidade?`${d.bairro}, ${d.cidade}`:''].filter(Boolean).join(' | ');add(values,'JOKER-IMOVEL-RESUMO-TECNICO',resumo,includeEmpty); if(d.preco)add(values,'JOKER-MERCADO-PRECO-VALOR-FORMATADO',d.preco.startsWith('R$')?d.preco:`R$ ${d.preco}`,includeEmpty); const voc=['voc_residencial','voc_comercial','voc_misto','voc_clinica','voc_escritorio','voc_restaurante','voc_investimento'].filter(k=>d[k]==='sim').map(k=>k.replace('voc_','')).join(', ');add(values,'JOKER-USO-VOCACAO-LISTA',voc,includeEmpty); if(!d.seo_title){add(values,'JOKER-SEO-META-TITLE-AUTO',resumo.slice(0,60),includeEmpty)} if(!d.seo_description){add(values,'JOKER-SEO-META-DESCRIPTION-AUTO',resumo?`${resumo}. Consulte condições, localização e detalhes do imóvel.`.slice(0,155):'',includeEmpty)} if(includeSchema){const schema={};if(d.schema_tipo) schema['@type']=d.schema_tipo;if(d.nome) schema.name=d.nome;if(d.seo_description||resumo) schema.description=d.seo_description||resumo;if(d.url_maps) schema.hasMap=d.url_maps;if(d.broker_nome||d.broker_email||d.broker_telefone) schema.provider={'@type':'RealEstateAgent',name:d.broker_nome||'',email:d.broker_email||'',telephone:d.broker_telefone||''};add(values,'JOKER-SCHEMA-JSONLD-SEGURO',Object.keys(schema).length?JSON.stringify(schema):'',includeEmpty)}}
 function validate(obj,requiredMissing){const keys=Object.keys(obj.valores);const bad=keys.filter(k=>!/^JOKER-[A-Z0-9]+-[A-Z0-9]+-[A-Z0-9-]+$/.test(k));const empty=keys.filter(k=>obj.valores[k]==='').length;let html='<b>Validação</b>';html+=bad.length?`<div class="bad">${bad.length} chaves fora do padrão 4 níveis.</div>`:'<div class="ok">Todas as chaves seguem 4 níveis.</div>';html+=requiredMissing.length?`<div class="bad">Obrigatórios ausentes: ${requiredMissing.join(', ')}</div>`:'<div class="ok">Obrigatórios OK.</div>';html+=`<div class="warn">${empty} campos vazios incluídos.</div>`;validation.innerHTML=html}
 function displayJSON(obj){const esc=JSON.stringify(obj,null,2).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');preview.innerHTML=esc.replace(/("(?:[^"\\]|\\.)*")(?=\s*:)/g,'<span class="json-key">$1</span>').replace(/: ("(?:[^"\\]|\\.)*")/g,': <span class="json-string">$1</span>').replace(/: (\d+\.?\d*)/g,': <span class="json-number">$1</span>').replace(/: (true|false)/g,': <span class="json-boolean">$1</span>').replace(/: (null)/g,': <span class="json-null">$1</span>').replace(/([{}\[\]])/g,'<span class="json-brace">$1</span>')}
-function copyJSON(){if(!lastJSON)return showToast('Gere um JSON primeiro');navigator.clipboard.writeText(JSON.stringify(lastJSON,null,2)).then(()=>showToast('JSON copiado'))}
-function downloadJSON(){if(!lastJSON)return showToast('Gere um JSON primeiro');const blob=new Blob([JSON.stringify(lastJSON,null,2)],{type:'application/json;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(document.getElementById('nome')?.value||'joker-preset').replace(/\s+/g,'_')+'.json';a.click();URL.revokeObjectURL(a.href);showToast('JSON baixado')}
+function safeDownload(filename, content, mime='application/json;charset=utf-8'){
+  const blob=new Blob([content],{type:mime});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=filename;
+  a.style.display='none';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1200);
+}
+function safeFileName(name,fallback){
+  return String(name||fallback||'arquivo').trim().replace(/[\/:*?"<>|]+/g,'').replace(/\s+/g,'_') || fallback;
+}
+async function copyJSON(){
+  if(!lastJSON)generateJSON();
+  const txt=JSON.stringify(lastJSON,null,2);
+  try{
+    await navigator.clipboard.writeText(txt);
+    showToast('JSON copiado');
+  }catch(err){
+    preview.textContent=txt;
+    showToast('Clipboard bloqueado: selecione e copie o JSON exibido');
+  }
+}
+function exportPreset(){
+  const result=generateJSON();
+  const nome=safeFileName(document.getElementById('nome')?.value,'joker-preset');
+  safeDownload(`${nome}.json`,JSON.stringify(result,null,2));
+  showToast('Preset exportado');
+}
+function downloadJSON(){exportPreset()}
 function resetForm(){document.querySelectorAll('input[type=text],textarea').forEach(el=>el.value=el.defaultValue||'');document.querySelectorAll('select').forEach(el=>el.selectedIndex=0);lastJSON=null;preview.innerHTML='<div class="empty"><i class="fa-solid fa-database"></i>Preencha e gere o preset JSON.</div>';validation.innerHTML='<b>Validação</b><span class="warn">Aguardando geração.</span>';onTypeChange();showToast('Formulário limpo')}
-function exportConfig(){const blob=new Blob([JSON.stringify(config,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='joker_config_10_10.json';a.click();URL.revokeObjectURL(a.href);showToast('Config exportada')}
-function importConfigFile(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const imported=JSON.parse(ev.target.result);if(!imported.sections||!imported.propertyTypes)throw new Error('estrutura inválida');config=imported;renderForm();showToast('Config importada')}catch(err){showToast('Erro: '+err.message)}};r.readAsText(file);e.target.value=''}
-renderForm();window.generateJSON=generateJSON;window.copyJSON=copyJSON;window.downloadJSON=downloadJSON;window.resetForm=resetForm;window.exportConfig=exportConfig;window.importConfigFile=importConfigFile;window.onTypeChange=onTypeChange;
+function exportConfig(){
+  safeDownload('joker_config_10_10.json',JSON.stringify(config,null,2));
+  showToast('Config técnica exportada');
+}
+function findOptionValue(field, value) {
+  if (value == null || value === '') return '';
+  let opts = field.options === 'propertyTypes' ? config.propertyTypes : field.options;
+  const normalized = String(value).trim().toLowerCase();
+  const found = (opts || []).find(o => {
+    const v = String(optValue(o) || '').trim().toLowerCase();
+    const t = String(optText(o) || '').trim().toLowerCase();
+    return v === normalized || t === normalized;
+  });
+  return found ? optValue(found) : value;
+}
+function buildImportIndex() {
+  const index = {};
+  config.sections.forEach(section => {
+    section.groups.forEach(group => {
+      group.fields.forEach(field => {
+        const key = placeholderKey(section, group, field);
+        index[key] = field;
+        index[field.id] = field;
+        const ph = String(field.placeholderName || '').toUpperCase();
+        if (ph) index[ph] = field;
+        // Não mapeamos pela última parte para evitar ambiguidade
+      });
+    });
+  });
+  return index;
+}
+function extractImportValues(imported){
+  if(imported && typeof imported==='object' && !Array.isArray(imported)){
+    if(imported.valores && typeof imported.valores==='object')return imported.valores;
+    if(imported.values && typeof imported.values==='object')return imported.values;
+    if(imported.placeholders && typeof imported.placeholders==='object')return imported.placeholders;
+    return imported;
+  }
+  throw new Error('JSON inválido para importação');
+}
+function populateFormFromPreset(imported) {
+  const valores = extractImportValues(imported);
+  let filled = 0, ignored = 0;
+  const keys = Object.keys(valores);
+  if (!keys.length) throw new Error('JSON vazio');
+
+  // Sincronizar checkboxes com base no conteúdo
+  const hasCopy = keys.some(k => String(k).startsWith('JOKER-COPY-'));
+  const hasSchema = keys.some(k => /^(JOKER-SEO-SCHEMA-|JOKER-SCHEMA-)/.test(String(k)));
+  const hasDerived = keys.some(k => /^(JOKER-LOCAL-ENDERECO-COMPLETO|JOKER-IMOVEL-RESUMO-TECNICO|JOKER-MERCADO-PRECO-VALOR-FORMATADO|JOKER-USO-VOCACAO-LISTA|JOKER-SEO-META-TITLE-AUTO|JOKER-SEO-META-DESCRIPTION-AUTO|JOKER-SCHEMA-JSONLD-SEGURO)/.test(String(k)));
+  const hasEmpty = Object.values(valores).some(v => v === '');
+
+  document.getElementById('includeCopy').checked = hasCopy;
+  document.getElementById('includeSchema').checked = hasSchema;
+  document.getElementById('includeDerived').checked = hasDerived;
+  document.getElementById('includeEmpty').checked = hasEmpty;
+
+  const index = buildImportIndex();
+  keys.forEach(key => {
+    const field = index[key] || index[String(key).toUpperCase()] || null;
+    if (!field) { ignored++; return; }
+    const el = document.getElementById(field.id);
+    if (!el) { ignored++; return; }
+    let value = valores[key];
+    if (value == null) value = '';
+    if (typeof value === 'object') value = JSON.stringify(value);
+    value = String(value);
+    if (field.type === 'select') value = findOptionValue(field, value);
+    el.value = value;
+    filled++;
+  });
+
+  // Forçar sincronização de campos condicionais
+  const tipoEl = document.getElementById('tipo');
+  if (tipoEl) {
+    // Disparar change para atualizar visibilidade
+    tipoEl.dispatchEvent(new Event('change'));
+  }
+  onTypeChange();
+
+  generateJSON();
+  showToast(`Importado: ${filled} campos alimentados${ignored ? ` · ${ignored} ignorados` : ''}`);
+}
+function importConfigFile(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const imported=JSON.parse(ev.target.result);
+      if(imported.sections&&imported.propertyTypes){
+        config=imported;
+        renderForm();
+        showToast('Config importada');
+      }else{
+        populateFormFromPreset(imported);
+      }
+    }catch(err){
+      showToast('Erro: '+err.message);
+    }
+  };
+  r.readAsText(file);
+  e.target.value='';
+}
+renderForm();window.generateJSON=generateJSON;window.copyJSON=copyJSON;window.downloadJSON=downloadJSON;window.exportPreset=exportPreset;window.resetForm=resetForm;window.exportConfig=exportConfig;window.importConfigFile=importConfigFile;window.onTypeChange=onTypeChange;
 </script>
 </body>
 </html>
