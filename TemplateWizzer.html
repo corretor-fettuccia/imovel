@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Instalador – Preset + Rolagem Independente</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --cor-principal: #2c7a4d;
+            --cor-principal-hover: #23633f;
+            --cor-secundaria: #475569;
+            --cor-texto: #1e293b;
+            --cor-muted: #64748b;
+            --cor-borda: #cbd5e1;
+            --cor-bg: #f0f2f5;
+            --cor-card: #ffffff;
+            --cor-sucesso: #166534;
+            --cor-erro: #b91c1c;
+            --cor-alerta: #92400e;
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            --radius: 0.8rem;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: var(--cor-bg);
+            padding: 0.5rem;
+            color: var(--cor-texto);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        .card {
+            background: var(--cor-card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 1rem 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+            letter-spacing: -0.03em;
+            font-weight: 700;
+        }
+
+        h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-left: 5px solid var(--cor-principal);
+            padding-left: 0.8rem;
+            margin: 0 0 0.6rem 0;
+        }
+
+        .subtexto {
+            color: var(--cor-muted);
+            font-size: 0.85rem;
+        }
+
+        .badge {
+            background: #e2e8f0;
+            color: #334155;
+            padding: 0.15rem 0.6rem;
+            border-radius: 2rem;
+            font-size: 0.65rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .upload-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .upload-box {
+            flex: 1;
+            min-width: 180px;
+            border: 2px dashed var(--cor-borda);
+            border-radius: var(--radius);
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            background: #fafcff;
+            outline: none;
+        }
+
+        .upload-box:hover,
+        .upload-box:focus-visible,
+        .upload-box.is-dragover {
+            border-color: var(--cor-principal);
+            background: #f8fafc;
+        }
+
+        .upload-box input {
+            display: none;
+        }
+
+        .upload-box strong {
+            display: block;
+            font-size: 0.95rem;
+        }
+        .upload-box small {
+            font-size: 0.7rem;
+            color: var(--cor-muted);
+        }
+
+        .btn {
+            background: var(--cor-principal);
+            color: white;
+            border: none;
+            padding: 0.4rem 1rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: background 0.2s, transform 0.1s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.3rem;
+            min-height: 34px;
+            line-height: 1;
+        }
+
+        .btn:hover {
+            background: var(--cor-principal-hover);
+        }
+        .btn:active {
+            transform: translateY(1px);
+        }
+        .btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--cor-principal);
+            color: var(--cor-principal);
+        }
+        .btn-outline:hover {
+            background: #e9f5ef;
+            color: var(--cor-principal);
+        }
+
+        .btn-secondary {
+            background: var(--cor-secundaria);
+        }
+        .btn-secondary:hover {
+            background: #334155;
+        }
+
+        .btn-danger {
+            background: #991b1b;
+        }
+        .btn-danger:hover {
+            background: #7f1d1d;
+        }
+
+        .btn-sm {
+            font-size: 0.65rem;
+            padding: 0.15rem 0.7rem;
+            min-height: 28px;
+        }
+
+        .status {
+            margin-top: 0.4rem;
+            font-size: 0.8rem;
+            min-height: 1.2rem;
+        }
+        .status.sucesso {
+            color: var(--cor-sucesso);
+        }
+        .status.erro {
+            color: var(--cor-erro);
+        }
+        .status.alerta {
+            color: var(--cor-alerta);
+        }
+
+        /* ===== Layout com divisor ajustável ===== */
+        .resizable-panel {
+            display: flex;
+            gap: 0;
+            margin-top: 0.3rem;
+            min-height: 500px;
+            max-height: 80vh;
+        }
+
+        .editor-panel {
+            flex: 1 1 50%;
+            min-width: 200px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+            max-height: 80vh;
+        }
+
+        .preview-panel {
+            flex: 1 1 50%;
+            min-width: 200px;
+            display: flex;
+            flex-direction: column;
+            padding-left: 0.5rem;
+            max-height: 80vh;
+        }
+
+        .divider {
+            width: 8px;
+            background: var(--cor-borda);
+            cursor: col-resize;
+            flex-shrink: 0;
+            border-radius: 4px;
+            transition: background 0.2s;
+            position: relative;
+            margin: 0 2px;
+        }
+
+        .divider:hover,
+        .divider.active {
+            background: var(--cor-principal);
+        }
+
+        .divider::after {
+            content: '⋮';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 1.2rem;
+            line-height: 1;
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .campos-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .campo {
+            background: #f8fafc;
+            padding: 0.4rem 0.6rem;
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        .campo label {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.5rem;
+            font-weight: 700;
+            font-size: 0.65rem;
+            font-family: var(--font-mono);
+            color: var(--cor-principal);
+            margin-bottom: 0.15rem;
+        }
+
+        .campo textarea {
+            width: 100%;
+            min-height: 36px;
+            max-height: 110px;
+            resize: vertical;
+            padding: 0.3rem 0.5rem;
+            border: 1px solid var(--cor-borda);
+            border-radius: 0.4rem;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            line-height: 1.3;
+        }
+
+        .campo textarea:focus {
+            outline: 2px solid rgba(44, 122, 77, 0.25);
+            border-color: var(--cor-principal);
+        }
+
+        .preview-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.3rem;
+            margin-bottom: 0.4rem;
+            flex-shrink: 0;
+        }
+
+        .preview-wrapper {
+            flex: 1;
+            background: #f1f5f9;
+            border-radius: 0.6rem;
+            padding: 0.4rem;
+            border: 1px solid var(--cor-borda);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+        }
+
+        .preview-iframe-wrapper {
+            width: 100%;
+            height: 100%;
+            background: white;
+            border-radius: 0.4rem;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .preview-iframe-wrapper iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+            min-height: 350px;
+        }
+
+        .stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .action-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-top: 0.8rem;
+            justify-content: flex-start;
+            flex-shrink: 0;
+        }
+
+        .preset-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--cor-borda);
+            flex-shrink: 0;
+        }
+
+        footer {
+            text-align: center;
+            font-size: 0.7rem;
+            color: var(--cor-muted);
+            margin-top: 1.5rem;
+            padding-top: 0.8rem;
+            border-top: 1px solid var(--cor-borda);
+        }
+
+        code {
+            background: #e2e8f0;
+            padding: 0.05rem 0.3rem;
+            border-radius: 0.2rem;
+            font-size: 0.8em;
+        }
+
+        /* ===== Responsivo ===== */
+        @media (max-width: 900px) {
+            .resizable-panel {
+                flex-direction: column;
+                max-height: none;
+                min-height: 400px;
+            }
+            .divider {
+                width: 100%;
+                height: 8px;
+                cursor: row-resize;
+                margin: 2px 0;
+            }
+            .divider::after {
+                content: '⋯';
+            }
+            .editor-panel,
+            .preview-panel {
+                flex: 1 1 auto;
+                padding: 0;
+                max-height: 50vh;
+                overflow-y: auto;
+            }
+            .preview-iframe-wrapper iframe {
+                min-height: 250px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 0.3rem;
+            }
+            .card {
+                padding: 0.7rem;
+                border-radius: 0.6rem;
+            }
+            .upload-box {
+                padding: 0.7rem;
+            }
+            .action-bar,
+            .preset-bar {
+                flex-direction: column;
+            }
+            .action-bar .btn,
+            .preset-bar .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <header class="card">
+        <div class="card-header">
+            <h1>📄 Instalador Dual Upload</h1>
+            <span class="badge">Placeholders <code>JOKER-*</code></span>
+        </div>
+        <p class="subtexto">
+            Carregue o template HTML, preencha os placeholders e veja o preview.<br />
+            Arraste a barra cinza no meio para redimensionar os painéis.
+        </p>
+    </header>
+
+    <!-- UPLOAD HTML -->
+    <section class="card" aria-labelledby="titulo-html">
+        <h2 id="titulo-html">1. Carregar Template HTML</h2>
+        <div class="upload-grid">
+            <div id="htmlUploadBox" class="upload-box" tabindex="0" role="button" aria-label="Selecionar arquivo HTML">
+                <strong>📂 Clique ou arraste .html</strong>
+                <small>Formatos: .html, .htm</small>
+                <input type="file" id="htmlFile" accept=".html,.htm,text/html" />
+                <br />
+                <button id="htmlUploadBtn" type="button" class="btn" style="margin-top: 8px;">Selecionar HTML</button>
+            </div>
+        </div>
+        <div id="htmlStatus" class="status" aria-live="polite"></div>
+    </section>
+
+    <!-- EDIÇÃO + PREVIEW + PRESET -->
+    <main id="placeholdersSection" style="display: none;">
+        <section class="card" aria-labelledby="titulo-edicao">
+            <div class="resizable-panel" id="resizablePanel">
+                <!-- Editor -->
+                <div class="editor-panel" id="editorPanel">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.3rem; margin-bottom:0.4rem;">
+                        <h2 id="titulo-edicao" style="border-left-color:var(--cor-principal); margin:0;">✏️ Editar placeholders</h2>
+                        <button id="clearValuesBtn" type="button" class="btn btn-danger btn-sm">Limpar</button>
+                    </div>
+                    <div id="stats" class="stats"></div>
+                    <div id="camposContainer" class="campos-grid"></div>
+
+                    <div class="action-bar">
+                        <button id="saveJsonBtn" type="button" class="btn btn-outline btn-sm">💾 Salvar setup.json</button>
+                        <button id="exportHtmlBtn" type="button" class="btn btn-sm">⬇️ Exportar HTML</button>
+                    </div>
+
+                    <!-- NOVA SEÇÃO: PRESET JSON -->
+                    <div class="preset-bar">
+                        <span style="font-weight:600; font-size:0.8rem; margin-right:0.5rem;">📦 Preset:</span>
+                        <button id="savePresetBtn" type="button" class="btn btn-secondary btn-sm">💾 Salvar preset</button>
+                        <button id="loadPresetBtn" type="button" class="btn btn-secondary btn-sm">📂 Carregar preset</button>
+                        <input type="file" id="presetFileInput" accept=".json,application/json" style="display:none;" />
+                        <span id="presetStatus" class="status" style="margin-top:0;"></span>
+                    </div>
+                </div>
+
+                <!-- Divider -->
+                <div class="divider" id="divider"></div>
+
+                <!-- Preview -->
+                <div class="preview-panel" id="previewPanel">
+                    <div class="preview-toolbar">
+                        <h2 id="titulo-preview" style="border-left-color:var(--cor-principal); margin:0;">👁️ Pré‑visualização</h2>
+                        <div>
+                            <button id="copyPreviewBtn" type="button" class="btn btn-secondary btn-sm">Copiar código</button>
+                            <button id="refreshPreviewBtn" type="button" class="btn btn-sm">↻</button>
+                        </div>
+                    </div>
+                    <div class="preview-wrapper">
+                        <div class="preview-iframe-wrapper">
+                            <iframe id="previewIframe" srcdoc="<html><body style='font-family:sans-serif;padding:2rem;color:#64748b;'><p>Carregue um HTML para ver o preview.</p></body></html>"></iframe>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- UPLOAD JSON (externo) -->
+        <section class="card" aria-labelledby="titulo-json">
+            <h2 id="titulo-json">2. Carregar setup.json (opcional)</h2>
+            <div class="upload-grid">
+                <div id="jsonUploadBox" class="upload-box" tabindex="0" role="button" aria-label="Selecionar arquivo JSON">
+                    <strong>📁 Clique ou arraste .json</strong>
+                    <small>Chaves devem corresponder aos placeholders.</small>
+                    <input type="file" id="jsonFile" accept=".json,application/json" />
+                    <br />
+                    <button id="jsonUploadBtn" type="button" class="btn btn-secondary" style="margin-top: 8px;">Carregar JSON</button>
+                </div>
+            </div>
+            <div id="jsonStatus" class="status" aria-live="polite"></div>
+        </section>
+    </main>
+
+    <footer>
+        Placeholders: <code>JOKER-NOME</code>, <code>JOKER-IMOVEL</code>, etc.<br />
+        O preview mostra apenas o HTML substituído (sem carregar CSS/JS externos). A exportação mantém os links originais.
+    </footer>
+</div>
+
+<script>
+    (function() {
+        'use strict';
+
+        const CONFIG = {
+            maxFileSizeMB: 8,
+            placeholderRegex: /\bJOKER[-_][A-Z0-9]+(?:[-_][A-Z0-9]+)*\b/g,
+            previewDebounceMs: 120
+        };
+
+        const state = {
+            templateOriginal: '',
+            allPlaceholders: [],
+            currentValues: new Map(),
+            previewTimer: null
+        };
+
+        const dom = {
+            htmlFileInput: document.getElementById('htmlFile'),
+            htmlUploadBtn: document.getElementById('htmlUploadBtn'),
+            htmlUploadBox: document.getElementById('htmlUploadBox'),
+            htmlStatus: document.getElementById('htmlStatus'),
+            placeholdersSection: document.getElementById('placeholdersSection'),
+            camposContainer: document.getElementById('camposContainer'),
+            stats: document.getElementById('stats'),
+            saveJsonBtn: document.getElementById('saveJsonBtn'),
+            exportHtmlBtn: document.getElementById('exportHtmlBtn'),
+            clearValuesBtn: document.getElementById('clearValuesBtn'),
+            copyPreviewBtn: document.getElementById('copyPreviewBtn'),
+            refreshPreviewBtn: document.getElementById('refreshPreviewBtn'),
+            previewIframe: document.getElementById('previewIframe'),
+            jsonFileInput: document.getElementById('jsonFile'),
+            jsonUploadBtn: document.getElementById('jsonUploadBtn'),
+            jsonUploadBox: document.getElementById('jsonUploadBox'),
+            jsonStatus: document.getElementById('jsonStatus'),
+            // Preset
+            savePresetBtn: document.getElementById('savePresetBtn'),
+            loadPresetBtn: document.getElementById('loadPresetBtn'),
+            presetFileInput: document.getElementById('presetFileInput'),
+            presetStatus: document.getElementById('presetStatus'),
+            // resizer
+            resizablePanel: document.getElementById('resizablePanel'),
+            divider: document.getElementById('divider'),
+            editorPanel: document.getElementById('editorPanel'),
+            previewPanel: document.getElementById('previewPanel')
+        };
+
+        // ===== Resizer =====
+        let isResizing = false;
+
+        function initResizer() {
+            const panel = dom.resizablePanel;
+            const divider = dom.divider;
+            const editor = dom.editorPanel;
+            const preview = dom.previewPanel;
+
+            function startResize(e) {
+                isResizing = true;
+                divider.classList.add('active');
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+                e.preventDefault();
+            }
+
+            function doResize(e) {
+                if (!isResizing) return;
+                const rect = panel.getBoundingClientRect();
+                const isMobile = window.innerWidth <= 900;
+
+                let pos;
+                if (isMobile) {
+                    pos = (e.clientY || e.touches[0].clientY) - rect.top;
+                    const percent = Math.min(1, Math.max(0, pos / rect.height));
+                    const editorHeight = percent * 100;
+                    const previewHeight = (1 - percent) * 100;
+                    editor.style.flex = `0 0 ${editorHeight}%`;
+                    preview.style.flex = `0 0 ${previewHeight}%`;
+                } else {
+                    pos = (e.clientX || e.touches[0].clientX) - rect.left;
+                    const percent = Math.min(1, Math.max(0, pos / rect.width));
+                    const editorWidth = percent * 100;
+                    const previewWidth = (1 - percent) * 100;
+                    editor.style.flex = `0 0 ${editorWidth}%`;
+                    preview.style.flex = `0 0 ${previewWidth}%`;
+                }
+                e.preventDefault();
+            }
+
+            function stopResize() {
+                isResizing = false;
+                divider.classList.remove('active');
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+            }
+
+            divider.addEventListener('mousedown', startResize);
+            document.addEventListener('mousemove', doResize);
+            document.addEventListener('mouseup', stopResize);
+
+            divider.addEventListener('touchstart', startResize);
+            document.addEventListener('touchmove', doResize, { passive: false });
+            document.addEventListener('touchend', stopResize);
+
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 900) {
+                    editor.style.flex = '';
+                    preview.style.flex = '';
+                } else {
+                    editor.style.flex = '';
+                    preview.style.flex = '';
+                }
+            });
+        }
+
+        // ===== Funções auxiliares =====
+        function setStatus(element, mensagem, tipo) {
+            element.textContent = mensagem || '';
+            element.className = 'status' + (tipo ? ' ' + tipo : '');
+        }
+
+        function normalizarValor(valor) {
+            if (valor === null || valor === undefined) return '';
+            if (typeof valor === 'string') return valor;
+            return String(valor);
+        }
+
+        function extrairPlaceholders(html) {
+            const matches = html.match(CONFIG.placeholderRegex) || [];
+            return Array.from(new Set(matches)).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+        }
+
+        function escapeRegExp(texto) {
+            return texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function aplicarSubstituicao() {
+            let resultado = state.templateOriginal;
+            for (const ph of state.allPlaceholders) {
+                const valor = normalizarValor(state.currentValues.get(ph));
+                if (valor.trim() === '') continue;
+                const regex = new RegExp('(?<![A-Z0-9_-])' + escapeRegExp(ph) + '(?![A-Z0-9_-])', 'g');
+                resultado = resultado.replace(regex, valor);
+            }
+            return resultado;
+        }
+
+        function contarPreenchidos() {
+            return state.allPlaceholders.filter(ph => normalizarValor(state.currentValues.get(ph)).trim() !== '').length;
+        }
+
+        function atualizarStats() {
+            const total = state.allPlaceholders.length;
+            const preenchidos = contarPreenchidos();
+            const pendentes = total - preenchidos;
+            dom.stats.innerHTML = '';
+
+            const itens = [
+                `Total: ${total}`,
+                `Preenchidos: ${preenchidos}`,
+                `Pendentes: ${pendentes}`,
+                `Tamanho: ${(new Blob([state.templateOriginal]).size / 1024).toFixed(1)} KB`
+            ];
+            for (const item of itens) {
+                const span = document.createElement('span');
+                span.className = 'badge';
+                span.textContent = item;
+                dom.stats.appendChild(span);
+            }
+        }
+
+        function atualizarPreviewRenderizado() {
+            if (!state.templateOriginal) {
+                dom.previewIframe.srcdoc = `<html><body style="font-family:sans-serif;padding:2rem;color:#64748b;"><p>Carregue o template HTML para ver o preview.</p></body></html>`;
+                return;
+            }
+            const htmlFinal = aplicarSubstituicao();
+            dom.previewIframe.srcdoc = htmlFinal;
+            atualizarStats();
+        }
+
+        function atualizarPreview() {
+            clearTimeout(state.previewTimer);
+            state.previewTimer = setTimeout(atualizarPreviewRenderizado, CONFIG.previewDebounceMs);
+        }
+
+        function renderizarCampos() {
+            dom.camposContainer.textContent = '';
+            if (state.allPlaceholders.length === 0) {
+                const aviso = document.createElement('div');
+                aviso.style.cssText =
+                    'grid-column:1/-1; padding:1rem; text-align:center; background:#fef2f2; border-radius:0.6rem; color:#991b1b;';
+                aviso.textContent = 'Nenhum placeholder JOKER-* encontrado no HTML.';
+                dom.camposContainer.appendChild(aviso);
+                atualizarStats();
+                return;
+            }
+
+            const fragment = document.createDocumentFragment();
+            for (const ph of state.allPlaceholders) {
+                const div = document.createElement('div');
+                div.className = 'campo';
+
+                const label = document.createElement('label');
+                const labelText = document.createElement('span');
+                labelText.textContent = ph;
+                const count = document.createElement('span');
+                count.className = 'badge';
+                const ocorrencias = (state.templateOriginal.match(new RegExp(escapeRegExp(ph), 'g')) || []).length;
+                count.textContent = `${ocorrencias}x`;
+                label.append(labelText, count);
+
+                const textarea = document.createElement('textarea');
+                textarea.value = normalizarValor(state.currentValues.get(ph));
+                textarea.placeholder = `Valor para ${ph}`;
+                textarea.spellcheck = false;
+                textarea.dataset.placeholder = ph;
+                textarea.addEventListener('input', function() {
+                    state.currentValues.set(ph, this.value);
+                    atualizarPreview();
+                });
+
+                div.append(label, textarea);
+                fragment.appendChild(div);
+            }
+            dom.camposContainer.appendChild(fragment);
+            atualizarStats();
+        }
+
+        // ===== Upload HTML =====
+        function afterHtmlLoad(htmlContent, fileName) {
+            const valoresAnteriores = new Map(state.currentValues);
+            state.templateOriginal = htmlContent;
+            state.allPlaceholders = extrairPlaceholders(htmlContent);
+            state.currentValues.clear();
+            for (const ph of state.allPlaceholders) {
+                state.currentValues.set(ph, valoresAnteriores.has(ph) ? normalizarValor(valoresAnteriores.get(ph)) : '');
+            }
+            renderizarCampos();
+            atualizarPreviewRenderizado();
+            dom.placeholdersSection.style.display = 'block';
+            const mensagem = state.allPlaceholders.length ?
+                `HTML carregado: ${fileName || 'template'} | ${state.allPlaceholders.length} placeholder(s) detectado(s).` :
+                `HTML carregado, mas nenhum JOKER-* foi encontrado.`;
+            setStatus(dom.htmlStatus, mensagem, state.allPlaceholders.length ? 'sucesso' : 'alerta');
+            setStatus(dom.jsonStatus, '', '');
+            setStatus(dom.presetStatus, '', '');
+        }
+
+        function carregarArquivoHtml(file) {
+            try {
+                if (!file) return;
+                const limiteBytes = CONFIG.maxFileSizeMB * 1024 * 1024;
+                if (file.size > limiteBytes) {
+                    throw new Error(`Arquivo muito grande. Limite: ${CONFIG.maxFileSizeMB} MB.`);
+                }
+                const nome = file.name.toLowerCase();
+                if (!(/\.(html|htm)$/i.test(nome) || file.type === 'text/html')) {
+                    throw new Error('Arquivo inválido. Selecione um .html ou .htm.');
+                }
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    afterHtmlLoad(e.target.result, file.name);
+                };
+                reader.onerror = function() {
+                    setStatus(dom.htmlStatus, 'Erro ao ler o arquivo.', 'erro');
+                };
+                reader.readAsText(file, 'UTF-8');
+            } catch (err) {
+                setStatus(dom.htmlStatus, err.message, 'erro');
+            } finally {
+                dom.htmlFileInput.value = '';
+            }
+        }
+
+        // ===== JSON (externo) =====
+        function salvarSetupJson() {
+            if (state.allPlaceholders.length === 0) {
+                setStatus(dom.jsonStatus, 'Nenhum placeholder detectado. Carregue um HTML primeiro.', 'erro');
+                return;
+            }
+            const obj = {
+                _meta: {
+                    geradoEm: new Date().toISOString(),
+                    totalPlaceholders: state.allPlaceholders.length
+                },
+                valores: {}
+            };
+            for (const ph of state.allPlaceholders) {
+                obj.valores[ph] = normalizarValor(state.currentValues.get(ph));
+            }
+            baixarArquivo('setup.json', JSON.stringify(obj, null, 2), 'application/json');
+            setStatus(dom.jsonStatus, 'setup.json salvo com sucesso.', 'sucesso');
+        }
+
+        function carregarSetupJson(file) {
+            try {
+                if (!file) return;
+                const limiteBytes = CONFIG.maxFileSizeMB * 1024 * 1024;
+                if (file.size > limiteBytes) {
+                    throw new Error(`Arquivo muito grande. Limite: ${CONFIG.maxFileSizeMB} MB.`);
+                }
+                if (!(/\.json$/i.test(file.name) || file.type === 'application/json')) {
+                    throw new Error('Arquivo inválido. Selecione um .json.');
+                }
+                if (state.allPlaceholders.length === 0) {
+                    throw new Error('Carregue o HTML primeiro para que os placeholders sejam conhecidos.');
+                }
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const parsed = JSON.parse(e.target.result);
+                        const obj = parsed && typeof parsed === 'object' && parsed.valores && typeof parsed.valores === 'object' ?
+                            parsed.valores :
+                            parsed;
+                        if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {
+                            throw new Error('JSON precisa ser um objeto com placeholders e valores.');
+                        }
+                        let aplicados = 0,
+                            ignorados = 0;
+                        for (const chave of Object.keys(obj)) {
+                            if (state.currentValues.has(chave)) {
+                                state.currentValues.set(chave, normalizarValor(obj[chave]));
+                                aplicados++;
+                            } else if (!chave.startsWith('_')) {
+                                ignorados++;
+                            }
+                        }
+                        if (aplicados === 0) {
+                            throw new Error('O JSON não contém nenhum placeholder compatível com este HTML.');
+                        }
+                        renderizarCampos();
+                        atualizarPreviewRenderizado();
+                        setStatus(dom.jsonStatus, `JSON carregado. ${aplicados} valor(es) aplicado(s). ${ignorados} chave(s) ignorada(s).`,
+                            'sucesso');
+                    } catch (err) {
+                        setStatus(dom.jsonStatus, 'Erro no JSON: ' + err.message, 'erro');
+                    }
+                };
+                reader.onerror = function() {
+                    setStatus(dom.jsonStatus, 'Erro ao ler o arquivo JSON.', 'erro');
+                };
+                reader.readAsText(file, 'UTF-8');
+            } catch (err) {
+                setStatus(dom.jsonStatus, err.message, 'erro');
+            } finally {
+                dom.jsonFileInput.value = '';
+            }
+        }
+
+        // ===== PRESET (salvar/load interno) =====
+        function salvarPreset() {
+            if (state.allPlaceholders.length === 0) {
+                setStatus(dom.presetStatus, 'Nenhum placeholder para salvar.', 'erro');
+                return;
+            }
+            const obj = {
+                _meta: {
+                    tipo: 'preset',
+                    geradoEm: new Date().toISOString(),
+                    totalPlaceholders: state.allPlaceholders.length,
+                    templateSize: (new Blob([state.templateOriginal]).size)
+                },
+                valores: {}
+            };
+            for (const ph of state.allPlaceholders) {
+                obj.valores[ph] = normalizarValor(state.currentValues.get(ph));
+            }
+            baixarArquivo('preset.json', JSON.stringify(obj, null, 2), 'application/json');
+            setStatus(dom.presetStatus, 'Preset salvo com sucesso.', 'sucesso');
+        }
+
+        function carregarPreset(file) {
+            try {
+                if (!file) return;
+                const limiteBytes = CONFIG.maxFileSizeMB * 1024 * 1024;
+                if (file.size > limiteBytes) {
+                    throw new Error(`Arquivo muito grande. Limite: ${CONFIG.maxFileSizeMB} MB.`);
+                }
+                if (!(/\.json$/i.test(file.name) || file.type === 'application/json')) {
+                    throw new Error('Arquivo inválido. Selecione um .json.');
+                }
+                if (state.allPlaceholders.length === 0) {
+                    throw new Error('Carregue o HTML primeiro para que os placeholders sejam conhecidos.');
+                }
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const parsed = JSON.parse(e.target.result);
+                        // Pode ser o objeto com valores direto ou com _meta
+                        let valores = parsed;
+                        if (parsed && typeof parsed === 'object' && parsed.valores) {
+                            valores = parsed.valores;
+                        }
+                        if (!valores || typeof valores !== 'object' || Array.isArray(valores)) {
+                            throw new Error('Formato inválido: esperado objeto com placeholders e valores.');
+                        }
+                        let aplicados = 0;
+                        for (const chave of Object.keys(valores)) {
+                            if (state.currentValues.has(chave)) {
+                                state.currentValues.set(chave, normalizarValor(valores[chave]));
+                                aplicados++;
+                            }
+                        }
+                        if (aplicados === 0) {
+                            throw new Error('Nenhum placeholder compatível encontrado no preset.');
+                        }
+                        renderizarCampos();
+                        atualizarPreviewRenderizado();
+                        setStatus(dom.presetStatus, `Preset carregado: ${aplicados} valor(es) aplicado(s).`, 'sucesso');
+                    } catch (err) {
+                        setStatus(dom.presetStatus, 'Erro no preset: ' + err.message, 'erro');
+                    }
+                };
+                reader.onerror = function() {
+                    setStatus(dom.presetStatus, 'Erro ao ler o arquivo.', 'erro');
+                };
+                reader.readAsText(file, 'UTF-8');
+            } catch (err) {
+                setStatus(dom.presetStatus, err.message, 'erro');
+            } finally {
+                dom.presetFileInput.value = '';
+            }
+        }
+
+        // ===== Exportar =====
+        function exportarHtml() {
+            if (!state.templateOriginal) {
+                setStatus(dom.htmlStatus, 'Nenhum template HTML carregado.', 'erro');
+                return;
+            }
+            const htmlFinal = aplicarSubstituicao();
+            const naoPreenchidos = state.allPlaceholders.filter(ph => normalizarValor(state.currentValues.get(ph)).trim() === '');
+            if (naoPreenchidos.length > 0) {
+                const lista = naoPreenchidos.slice(0, 15).join(', ');
+                const extra = naoPreenchidos.length > 15 ? ` e mais ${naoPreenchidos.length - 15}` : '';
+                const confirmar = window.confirm(
+                    `Ainda existem ${naoPreenchidos.length} placeholder(s) não preenchidos: ${lista}${extra}.\nDeseja exportar mesmo assim?`
+                    );
+                if (!confirmar) return;
+            }
+            baixarArquivo('template-instalado.html', htmlFinal, 'text/html;charset=utf-8');
+        }
+
+        function baixarArquivo(nome, conteudo, tipo) {
+            const blob = new Blob([conteudo], { type: tipo });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = nome;
+            link.rel = 'noopener';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
+
+        function limparValores() {
+            for (const ph of state.allPlaceholders) {
+                state.currentValues.set(ph, '');
+            }
+            renderizarCampos();
+            atualizarPreviewRenderizado();
+        }
+
+        async function copiarCodigo() {
+            if (!state.templateOriginal) {
+                setStatus(dom.htmlStatus, 'Nenhum template carregado.', 'alerta');
+                return;
+            }
+            const htmlFinal = aplicarSubstituicao();
+            try {
+                await navigator.clipboard.writeText(htmlFinal);
+                setStatus(dom.htmlStatus, 'Código HTML copiado.', 'sucesso');
+            } catch (_) {
+                setStatus(dom.htmlStatus, 'Não foi possível copiar automaticamente.', 'alerta');
+            }
+        }
+
+        // ===== Event listeners =====
+        dom.htmlUploadBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dom.htmlFileInput.click();
+        });
+        dom.htmlFileInput.addEventListener('change', function(e) {
+            if (e.target.files.length) carregarArquivoHtml(e.target.files[0]);
+        });
+        setupDragDrop(dom.htmlUploadBox, carregarArquivoHtml);
+        setupUploadBox(dom.htmlUploadBox, dom.htmlFileInput);
+
+        dom.jsonUploadBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dom.jsonFileInput.click();
+        });
+        dom.jsonFileInput.addEventListener('change', function(e) {
+            if (e.target.files.length) carregarSetupJson(e.target.files[0]);
+        });
+        setupDragDrop(dom.jsonUploadBox, carregarSetupJson);
+        setupUploadBox(dom.jsonUploadBox, dom.jsonFileInput);
+
+        // Preset
+        dom.savePresetBtn.addEventListener('click', salvarPreset);
+        dom.loadPresetBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dom.presetFileInput.click();
+        });
+        dom.presetFileInput.addEventListener('change', function(e) {
+            if (e.target.files.length) carregarPreset(e.target.files[0]);
+        });
+        // Drag & drop para preset? Podemos reutilizar a mesma box, mas é mais simples deixar só o botão.
+
+        dom.saveJsonBtn.addEventListener('click', salvarSetupJson);
+        dom.exportHtmlBtn.addEventListener('click', exportarHtml);
+        dom.clearValuesBtn.addEventListener('click', limparValores);
+        dom.copyPreviewBtn.addEventListener('click', copiarCodigo);
+        dom.refreshPreviewBtn.addEventListener('click', function() {
+            atualizarPreviewRenderizado();
+            setStatus(dom.htmlStatus, 'Preview atualizado.', 'sucesso');
+        });
+
+        function setupDragDrop(element, callback) {
+            ['dragenter', 'dragover'].forEach(eventName => {
+                element.addEventListener(eventName, function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    element.classList.add('is-dragover');
+                });
+            });
+            ['dragleave', 'drop'].forEach(eventName => {
+                element.addEventListener(eventName, function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    element.classList.remove('is-dragover');
+                });
+            });
+            element.addEventListener('drop', function(e) {
+                const files = e.dataTransfer && e.dataTransfer.files;
+                if (files && files.length) {
+                    callback(files[0]);
+                }
+            });
+        }
+
+        function setupUploadBox(box, input) {
+            box.addEventListener('click', function(e) {
+                if (e.target.tagName !== 'BUTTON') input.click();
+            });
+            box.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    input.click();
+                }
+            });
+        }
+
+        // Inicializar resizer
+        initResizer();
+
+        console.log('✅ Editor com preset e rolagem independente carregado.');
+    })();
+</script>
+</body>
+</html>
