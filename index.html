@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página Inicial - Ferramentas</title>
+    <style>
+        /* Reset e estilo global */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fb;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ----- BARRA SUPERIOR ----- */
+        .navbar {
+            background: linear-gradient(135deg, #1e2b3c, #0f1a26);
+            color: #fff;
+            padding: 0 2rem;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo span {
+            background: #4a90d9;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #fff;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.8rem;
+            list-style: none;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: #e0e6ed;
+            text-decoration: none;
+            font-size: 1.05rem;
+            font-weight: 500;
+            padding: 8px 0;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .nav-links a:hover {
+            color: #ffffff;
+            border-bottom-color: #4a90d9;
+        }
+
+        .nav-links a.ativo {
+            color: #ffffff;
+            border-bottom-color: #4a90d9;
+        }
+
+        /* Ícone de menu hambúrguer (mobile) */
+        .menu-toggle {
+            display: none;
+            flex-direction: column;
+            cursor: pointer;
+            gap: 5px;
+            background: none;
+            border: none;
+            padding: 5px;
+        }
+
+        .menu-toggle span {
+            display: block;
+            width: 28px;
+            height: 3px;
+            background: #fff;
+            border-radius: 3px;
+            transition: 0.3s;
+        }
+
+        /* ----- CONTEÚDO PRINCIPAL ----- */
+        .main-content {
+            flex: 1;
+            max-width: 1100px;
+            margin: 3rem auto;
+            padding: 0 2rem;
+            width: 100%;
+        }
+
+        .hero {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 3rem 2.5rem;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 2.6rem;
+            font-weight: 600;
+            color: #1e2b3c;
+            margin-bottom: 0.5rem;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: #4a5a6e;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.8rem;
+            margin-top: 2rem;
+        }
+
+        .card {
+            background: #f8faff;
+            border-radius: 16px;
+            padding: 1.8rem 1.2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid #e9edf4;
+            text-decoration: none;
+            color: #1e2b3c;
+        }
+
+        .card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+            border-color: #b0c8e0;
+        }
+
+        .card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .card p {
+            color: #5a6e82;
+            font-size: 0.95rem;
+        }
+
+        .card .icone {
+            font-size: 2.2rem;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Rodapé simples */
+        .footer {
+            text-align: center;
+            padding: 1.5rem;
+            color: #7a8a9e;
+            font-size: 0.9rem;
+            border-top: 1px solid #e2e8f0;
+            background: #fff;
+            margin-top: auto;
+        }
+
+        /* ----- RESPONSIVO ----- */
+        @media (max-width: 700px) {
+            .navbar {
+                padding: 0 1rem;
+                height: 60px;
+            }
+
+            .logo {
+                font-size: 1.2rem;
+            }
+            .logo span {
+                font-size: 0.7rem;
+                padding: 2px 10px;
+            }
+
+            .nav-links {
+                gap: 1rem;
+            }
+            .nav-links a {
+                font-size: 0.95rem;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+            .hero p {
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 500px) {
+            .menu-toggle {
+                display: flex;
+            }
+
+            .nav-links {
+                display: none;
+                flex-direction: column;
+                background: #1e2b3c;
+                position: absolute;
+                top: 60px;
+                left: 0;
+                right: 0;
+                padding: 1rem 1.5rem;
+                gap: 1rem;
+                box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+                border-radius: 0 0 16px 16px;
+            }
+
+            .nav-links.aberto {
+                display: flex;
+            }
+
+            .nav-links a {
+                padding: 10px 0;
+                border-bottom: 1px solid #2f4055;
+                width: 100%;
+                text-align: center;
+            }
+            .nav-links a:hover {
+                border-bottom-color: #4a90d9;
+            }
+
+            .cards {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- BARRA SUPERIOR -->
+    <header class="navbar">
+        <div class="logo">
+            🧰 <span>Ferramentas</span>
+        </div>
+
+        <button class="menu-toggle" id="menuToggle" aria-label="Menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
+        <ul class="nav-links" id="navLinks">
+            <li><a href="TemplateWizzer.html">TemplateWizzer</a></li>
+            <li><a href="describer.html">Describer</a></li>
+            <li><a href="semantic_reader.html">Semantic Reader</a></li>
+        </ul>
+    </header>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="main-content">
+        <section class="hero">
+            <h1>Bem‑vindo(a) ao painel</h1>
+            <p>Escolha uma das ferramentas abaixo para começar:</p>
+
+            <div class="cards">
+                <a href="TemplateWizzer.html" class="card">
+                    <span class="icone">📄</span>
+                    <h3>TemplateWizzer</h3>
+                    <p>Gere e edite templates com facilidade.</p>
+                </a>
+                <a href="describer.html" class="card">
+                    <span class="icone">🔍</span>
+                    <h3>Describer</h3>
+                    <p>Descreva e analise conteúdos rapidamente.</p>
+                </a>
+                <a href="semantic_reader.html" class="card">
+                    <span class="icone">📖</span>
+                    <h3>Semantic Reader</h3>
+                    <p>Leitura semântica e extração de informações.</p>
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        &copy; 2025 — Ferramentas integradas
+    </footer>
+
+    <script>
+        // Menu hambúrguer para mobile
+        const toggle = document.getElementById('menuToggle');
+        const nav = document.getElementById('navLinks');
+
+        toggle.addEventListener('click', () => {
+            nav.classList.toggle('aberto');
+        });
+
+        // Fechar menu ao clicar em um link (opcional)
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.addEventListener('click', () => {
+                nav.classList.remove('aberto');
+            });
+        });
+    </script>
+</body>
+</html>
