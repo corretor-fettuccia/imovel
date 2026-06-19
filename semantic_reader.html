@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JOKER · Semantic Reader (corrigido)</title>
+<style>
+:root{
+  --bg:#f4f7fc;--card:#fff;--ink:#162435;--muted:#64748b;--line:#dbe5f0;--primary:#0b1e33;--accent:#2a7de1;--soft:#eef4fa;--danger:#b42318;--ok:#1f7a4d;
+}
+*{box-sizing:border-box;margin:0;padding:0} body{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--ink);padding:24px;}
+.app{max-width:1500px;margin:auto;background:var(--card);border-radius:28px;box-shadow:0 22px 70px rgba(0,20,40,.08);padding:26px;}
+header{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:22px}
+.brand{display:flex;gap:12px;align-items:center}.logo{background:var(--primary);color:#fff;border-radius:999px;padding:9px 18px;font-weight:800;letter-spacing:.5px}.brand h1{font-size:1.45rem}.brand span{font-weight:300;color:var(--accent)}
+.actions{display:flex;gap:10px;flex-wrap:wrap}button,.fileBtn{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:10px 16px;font-weight:700;cursor:pointer;color:var(--ink);display:inline-flex;gap:8px;align-items:center;font-size:.88rem}button:hover,.fileBtn:hover{background:var(--soft)}button.primary{background:var(--primary);color:#fff;border-color:var(--primary)}button.primary:hover{background:#173452}.grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}@media(max-width:1000px){.grid{grid-template-columns:1fr}.panel{max-height:none!important}}
+.panel{background:#f9fbfd;border:1px solid var(--line);border-radius:20px;padding:18px;min-height:650px;max-height:790px;display:flex;flex-direction:column;gap:14px}.panel h2{font-size:1rem;display:flex;gap:9px;align-items:center}.hint{font-size:.78rem;color:var(--muted);line-height:1.45}textarea{width:100%;flex:1;min-height:360px;resize:vertical;border:1.5px solid var(--line);border-radius:14px;padding:16px;font-family:JetBrains Mono,Consolas,monospace;font-size:.82rem;line-height:1.55;color:var(--ink);background:#fff}textarea:focus,select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(42,125,225,.12)}
+.modeBox{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}@media(max-width:760px){.modeBox{grid-template-columns:1fr 1fr}}.mode{border:1.5px solid var(--line);background:#fff;border-radius:14px;padding:12px;cursor:pointer}.mode input{margin-right:7px}.mode strong{font-size:.86rem}.mode small{display:block;color:var(--muted);font-size:.7rem;margin-top:4px}.mode:has(input:checked){border-color:var(--accent);background:#eef6ff}
+.output{flex:1;overflow:auto;background:#0b1e33;color:#eaf1f8;border-radius:14px;padding:18px;font-family:JetBrains Mono,Consolas,monospace;font-size:.78rem;line-height:1.62;white-space:pre-wrap}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}@media(max-width:760px){.cards{grid-template-columns:1fr}}.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px}.card b{display:block;font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}.card span{font-size:1.05rem;font-weight:800}.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.pill{background:var(--soft);border:1px solid var(--line);border-radius:999px;padding:7px 11px;color:var(--muted);font-size:.75rem;font-weight:700}.status{font-size:.82rem;color:var(--muted)}.status.ok{color:var(--ok)}.status.err{color:var(--danger)}select,input{border:1.5px solid var(--line);border-radius:12px;padding:9px 12px;background:#fff}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.copyarea{display:none}.empty{opacity:.75;text-align:center;padding:80px 20px}.sectionTitle{color:#93c5fd;font-weight:900}.warn{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:14px;padding:12px;font-size:.82rem}.toast{position:fixed;right:24px;bottom:24px;background:var(--primary);color:#fff;border-radius:999px;padding:12px 18px;box-shadow:0 12px 30px rgba(0,0,0,.22);opacity:0;transform:translateY(12px);transition:.25s}.toast.show{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="brand"><div class="logo">JOKER</div><h1>Semantic <span>Reader</span></h1></div>
+  <div class="actions">
+    <label class="fileBtn">Importar JSON<input id="fileInput" type="file" accept=".json,application/json" hidden></label>
+    <button onclick="loadExample()">Exemplo</button>
+    <button onclick="clearAll()">Limpar</button>
+    <button class="primary" onclick="runReader()">Ler JSON</button>
+  </div>
+</header>
+
+<div class="grid">
+  <section class="panel">
+    <h2>1. JSON taxonômico</h2>
+    <p class="hint">Cole aqui o JSON gerado pelo JOKER Placeholder. A ferramenta aceita tanto o formato completo com <b>_meta</b> e <b>valores</b>, quanto um objeto simples com chaves JOKER.</p>
+    <textarea id="jsonInput" spellcheck="false" placeholder='Cole aqui o JSON: { "valores": { "JOKER-IMOVEL-IDENTIDADE-TIPO": "Sobrado" } }'></textarea>
+    <div class="row">
+      <span id="parseStatus" class="status">Aguardando leitura.</span>
+      <span id="countPill" class="pill">0 placeholders</span>
+    </div>
+
+    <h2>2. Opções de prompt</h2>
+    <div class="modeBox">
+      <label class="mode"><input type="radio" name="mode" value="premium" checked><strong>Premium</strong><small>Site / landing page</small></label>
+      <label class="mode"><input type="radio" name="mode" value="tecnico"><strong>Técnico</strong><small>Relatório / parecer</small></label>
+      <label class="mode"><input type="radio" name="mode" value="minimalista"><strong>Minimalista</strong><small>Direto e elegante</small></label>
+      <label class="mode"><input type="radio" name="mode" value="comercial"><strong>Comercial</strong><small>WhatsApp / atendimento</small></label>
+      <label class="mode"><input type="radio" name="mode" value="social"><strong>Social media</strong><small>Instagram / Facebook</small></label>
+      <label class="mode"><input type="radio" name="mode" value="seo"><strong>SEO Google</strong><small>Título + meta + texto</small></label>
+      <label class="mode"><input type="radio" name="mode" value="ia"><strong>Prompt IA</strong><small>Para ChatGPT/Gemini</small></label>
+      <label class="mode"><input type="radio" name="mode" value="estrategista"><strong>Estrategista</strong><small>Diagnóstico de ativo</small></label>
+    </div>
+
+    <div class="row">
+      <label class="hint">Tom:</label>
+      <select id="tone"><option value="profissional">Profissional</option><option value="sofisticado">Sofisticado</option><option value="consultivo">Consultivo</option><option value="objetivo">Objetivo</option></select>
+      <label class="hint">Tamanho:</label>
+      <select id="size"><option value="curto">Curto</option><option value="medio" selected>Médio</option><option value="longo">Longo</option></select>
+      <label class="hint"><input type="checkbox" id="noEmoji" checked> Sem emojis</label>
+      <label class="hint"><input type="checkbox" id="safeOnly" checked> Não inventar dados</label>
+    </div>
+    <div class="warn">Regra de segurança: a ferramenta transforma somente o que está no JSON. Quando faltar dado, ela marca como “não informado”, em vez de inventar.</div>
+  </section>
+
+  <section class="panel">
+    <div class="toolbar">
+      <h2 style="margin-right:auto">Resultado da leitura</h2>
+      <button onclick="copyResult()">Copiar</button>
+      <button onclick="downloadTxt()">Baixar .txt</button>
+      <button onclick="downloadPrompt()">Baixar prompt</button>
+    </div>
+    <div class="cards">
+      <div class="card"><b>Tipo</b><span id="cTipo">—</span></div>
+      <div class="card"><b>Vocação</b><span id="cVocacao">—</span></div>
+      <div class="card"><b>Força</b><span id="cForca">—</span></div>
+    </div>
+    <div id="output" class="output"><div class="empty">Cole um JSON e clique em “Ler JSON”.</div></div>
+  </section>
+</div>
+</div>
+<div id="toast" class="toast"></div>
+<textarea id="copyarea" class="copyarea"></textarea>
+<script>
+let lastText = '';
+let lastPrompt = '';
+
+// ============================================================
+// ALIASES CORRIGIDOS – compatíveis com o padrão gerado:
+// JOKER-<CATEGORIA>-<GRUPO>-<CAMPO>
+// ============================================================
+const aliases = {
+  // Identificação
+  tipo: [
+    'JOKER-IMOVEL-IDENTIDADE-TIPO',
+    'JOKER-IMOVEL-TIPO',
+    'JOKER-SCHEMA-IMOVEL-TIPO'
+  ],
+  subtipo: [
+    'JOKER-IMOVEL-IDENTIDADE-SUBTIPO',
+    'JOKER-IMOVEL-SUBTIPO'
+  ],
+  finalidade: [
+    'JOKER-IMOVEL-IDENTIDADE-FINALIDADE',
+    'JOKER-IMOVEL-FINALIDADE'
+  ],
+  perfil: [
+    'JOKER-IMOVEL-IDENTIDADE-PERFIL',
+    'JOKER-IMOVEL-PERFIL'
+  ],
+
+  // Localização
+  cidade: [
+    'JOKER-LOCAL-ENDERECO-CIDADE',
+    'JOKER-LOCAL-CIDADE'
+  ],
+  bairro: [
+    'JOKER-LOCAL-ENDERECO-BAIRRO',
+    'JOKER-LOCAL-BAIRRO'
+  ],
+  uf: [
+    'JOKER-LOCAL-ENDERECO-UF',
+    'JOKER-LOCAL-UF'
+  ],
+  endereco: [
+    'JOKER-LOCAL-ENDERECO-LOGRADOURO',
+    'JOKER-LOCAL-ENDERECO-COMPLETO',
+    'JOKER-LOCAL-ENDERECO'
+  ],
+
+  // Dimensões
+  areaTerreno: [
+    'JOKER-IMOVEL-DIMENSAO-AREA_TERRENO',
+    'JOKER-IMOVEL-AREA-TERRENO',
+    'JOKER-AREA-TERRENO'
+  ],
+  areaConstruida: [
+    'JOKER-IMOVEL-DIMENSAO-AREA_CONSTRUIDA',
+    'JOKER-IMOVEL-AREA-CONSTRUIDA',
+    'JOKER-AREA-CONSTRUIDA'
+  ],
+  areaPrivativa: [
+    'JOKER-IMOVEL-DIMENSAO-AREA_PRIVATIVA',
+    'JOKER-IMOVEL-AREA-PRIVATIVA',
+    'JOKER-AREA-PRIVATIVA'
+  ],
+
+  // Cômodos
+  dormitorios: [
+    'JOKER-IMOVEL-COMODOS-DORMITORIOS',
+    'JOKER-IMOVEL-DORMITORIOS',
+    'JOKER-COMPARTIMENTOS-DORMITORIOS'
+  ],
+  suites: [
+    'JOKER-IMOVEL-COMODOS-SUITES',
+    'JOKER-IMOVEL-SUITES'
+  ],
+  banheiros: [
+    'JOKER-IMOVEL-COMODOS-BANHEIROS',
+    'JOKER-IMOVEL-BANHEIROS'
+  ],
+  vagas: [
+    'JOKER-IMOVEL-COMODOS-GARAGEM_VAGAS',
+    'JOKER-IMOVEL-GARAGEM-VAGAS',
+    'JOKER-MOBILIDADE-VAGAS'
+  ],
+
+  // Áreas externas
+  patio: [
+    'JOKER-IMOVEL-EXTERNAS-PATIO',
+    'JOKER-IMOVEL-PATIO'
+  ],
+  salao: [
+    'JOKER-IMOVEL-EXTERNAS-SALAO_FESTAS',
+    'JOKER-IMOVEL-SALAO-FESTAS'
+  ],
+
+  // Econômico
+  preco: [
+    'JOKER-MERCADO-PRECO-VALOR',
+    'JOKER-MERCADO-PRECO',
+    'JOKER-COMPRA-VALOR'
+  ],
+
+  // Jurídico / regularidade
+  financiavel: [
+    'JOKER-JURIDICO-REGULARIDADE-FINANCIAVEL',
+    'JOKER-JURIDICO-FINANCIAVEL'
+  ],
+  regularizado: [
+    'JOKER-JURIDICO-REGULARIDADE-REGULARIZADO',
+    'JOKER-JURIDICO-REGULARIZADO'
+  ],
+  fgts: [
+    'JOKER-JURIDICO-REGULARIDADE-ACEITA_FGTS',
+    'JOKER-JURIDICO-ACEITA_FGTS'
+  ],
+
+  // Diferenciais
+  avenida: [
+    'JOKER-DIFERENCIAIS-LOCALIZACAO-DIF_AVENIDA',
+    'JOKER-DIFERENCIAIS-AVENIDA'
+  ],
+  esquina: [
+    'JOKER-DIFERENCIAIS-LOCALIZACAO-DIF_ESQUINA',
+    'JOKER-DIFERENCIAIS-ESQUINA'
+  ],
+  dupla: [
+    'JOKER-DIFERENCIAIS-USO-DIF_DUPLA',
+    'JOKER-DIFERENCIAIS-DUPLA'
+  ],
+
+  // Valorização
+  valorizacao: [
+    'JOKER-MERCADO-VALORIZACAO-OBSERVACAO',
+    'JOKER-LOCAL-FATOR-VALORIZACAO',
+    'JOKER-VALORIZACAO-OBSERVACAO'
+  ],
+
+  // Narrativa / Copy
+  paraQuem: [
+    'JOKER-COPY-NARRATIVA-PARA_QUEM',
+    'JOKER-PUBLICO-TEXTO-PARA-QUEM'
+  ],
+  beneficio: [
+    'JOKER-COPY-NARRATIVA-PRINCIPAL_BENEFICIO',
+    'JOKER-COPY-BENEFICIO-FRASE-IMPACTO'
+  ],
+  descricao: [
+    'JOKER-IMOVEL-DESCRICAO',
+    'JOKER-COPY-DESCRICAO-PREMIUM'
+  ],
+
+  // Vocação (campos binários)
+  vocRes: [
+    'JOKER-USO-VOCACAO-RESIDENCIAL',
+    'JOKER-VOCACAO-RESIDENCIAL'
+  ],
+  vocCom: [
+    'JOKER-USO-VOCACAO-COMERCIAL',
+    'JOKER-VOCACAO-COMERCIAL'
+  ],
+  vocInv: [
+    'JOKER-USO-VOCACAO-INVESTIMENTO',
+    'JOKER-VOCACAO-INVESTIMENTO'
+  ],
+  vocLoc: [
+    'JOKER-USO-VOCACAO-LOCACAO',
+    'JOKER-VOCACAO-LOCACAO'
+  ],
+  vocOutros: [
+    'JOKER-USO-VOCACAO-OUTROS',
+    'JOKER-VOCACAO-OUTROS'
+  ]
+};
+
+// ============================================================
+// Funções auxiliares
+// ============================================================
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+function norm(v) {
+  return (v ?? '').toString().trim();
+}
+
+function yes(v) {
+  const s = norm(v).toLowerCase();
+  // Apenas valores explicitamente "sim", "true", "yes", "1"
+  // **NÃO** consideramos "residencial", "comercial" etc.
+  return ['sim', 'true', 'yes', '1'].includes(s);
+}
+
+function first(values, keys) {
+  for (const k of keys) {
+    const v = values[k];
+    if (v !== undefined && norm(v) !== '') {
+      return norm(v);
+    }
+  }
+  return '';
+}
+
+function getMode() {
+  return document.querySelector('input[name="mode"]:checked')?.value || 'premium';
+}
+
+// ============================================================
+// Parsing e extração
+// ============================================================
+function parseJSON() {
+  const raw = document.getElementById('jsonInput').value.trim();
+  if (!raw) throw new Error('JSON vazio.');
+  const obj = JSON.parse(raw);
+  const values = obj.valores && typeof obj.valores === 'object' ? obj.valores : obj;
+  return { obj, values };
+}
+
+function extract(values) {
+  const data = {};
+  Object.keys(aliases).forEach(k => {
+    data[k] = first(values, aliases[k]);
+  });
+
+  // monta local
+  data.local = [data.bairro, data.cidade && (data.uf ? data.cidade + '/' + data.uf : data.cidade)]
+    .filter(Boolean).join(', ');
+
+  // áreas
+  data.areas = [
+    data.areaConstruida && `${data.areaConstruida} m² construídos`,
+    data.areaPrivativa && `${data.areaPrivativa} m² privativos`,
+    data.areaTerreno && `${data.areaTerreno} m² de terreno`
+  ].filter(Boolean);
+
+  // cômodos
+  data.comodos = [
+    data.dormitorios && `${data.dormitorios} dormitório(s)`,
+    data.suites && `${data.suites} suíte(s)`,
+    data.banheiros && `${data.banheiros} banheiro(s)`,
+    data.vagas && `${data.vagas} vaga(s)`
+  ].filter(Boolean);
+
+  // vocações – usa apenas os valores binários (sim/nao) + vocOutros
+  const vocSet = new Set();
+  if (yes(data.vocRes) || /resid/i.test(data.perfil)) vocSet.add('residencial');
+  if (yes(data.vocCom) || /comerc/i.test(data.perfil)) vocSet.add('comercial');
+  if (yes(data.vocInv)) vocSet.add('investimento');
+  if (yes(data.vocLoc)) vocSet.add('locação');
+  if (data.vocOutros) {
+    // Se tiver "voc_outros", adiciona separado por vírgula
+    data.vocOutros.split(',').map(s => s.trim()).filter(Boolean).forEach(s => vocSet.add(s));
+  }
+  data.vocacoes = [...vocSet];
+
+  // diferenciais (a partir de campos binários)
+  const diffs = [];
+  if (yes(data.avenida)) diffs.push('localização em avenida/corredor de circulação');
+  if (yes(data.esquina)) diffs.push('posição de esquina');
+  if (yes(data.dupla)) diffs.push('dupla finalidade de uso');
+  if (yes(data.patio)) diffs.push('pátio/área externa');
+  if (yes(data.salao)) diffs.push('salão de festas');
+  if (yes(data.financiavel)) diffs.push('possibilidade de financiamento');
+  if (yes(data.regularizado)) diffs.push('regularidade documental');
+  // se não houver nenhum, aproveita outros campos que podem conter texto
+  if (diffs.length === 0 && data.descricao) {
+    // tenta extrair algo da descrição, mas não inventa
+    diffs.push('atributos detalhados na descrição');
+  }
+  data.diferenciais = diffs;
+
+  // força semântica
+  data.forca = score(data);
+
+  return data;
+}
+
+function score(d) {
+  let s = 0;
+  if (d.tipo) s += 1;
+  if (d.local) s += 1;
+  if (d.areas.length) s += 1.5;
+  if (d.comodos.length) s += 1;
+  if (d.vocacoes.length) s += 2;
+  if (d.diferenciais.length) s += 2;
+  if (d.valorizacao) s += 1;
+  if (d.paraQuem) s += 0.8;
+  return Math.min(10, Math.round(s * 10) / 10);
+}
+
+// ============================================================
+// Construção dos textos
+// ============================================================
+function linesOfData(d) {
+  return [
+    `Tipo: ${d.tipo || 'não informado'}`,
+    `Subtipo: ${d.subtipo || 'não informado'}`,
+    `Finalidade: ${d.finalidade || 'não informado'}`,
+    `Perfil: ${d.perfil || 'não informado'}`,
+    `Localização: ${d.local || 'não informada'}`,
+    `Áreas: ${d.areas.join(' | ') || 'não informadas'}`,
+    `Composição: ${d.comodos.join(' | ') || 'não informada'}`,
+    `Vocação: ${d.vocacoes.join(' | ') || 'não informada'}`,
+    `Diferenciais: ${d.diferenciais.join(' | ') || 'não informados'}`,
+    `Regularidade: ${[d.regularizado && 'regularizado', d.financiavel && 'financiável', d.fgts && 'aceita FGTS'].filter(Boolean).join(' | ') || 'não informada'}`,
+    `Valor: ${d.preco || 'não informado'}`
+  ].join('\n');
+}
+
+function buildPrompt(d, mode) {
+  const tone = document.getElementById('tone').value;
+  const size = document.getElementById('size').value;
+  const noEmoji = document.getElementById('noEmoji').checked ? 'sem emojis' : 'com uso moderado de emojis';
+  const safe = document.getElementById('safeOnly').checked
+    ? 'não invente informações ausentes; quando faltar dado, ignore ou indique como não informado'
+    : 'pode sugerir inferências, deixando claro que são inferências';
+
+  const intentMap = {
+    premium: 'descrição premium para site ou landing page',
+    tecnico: 'leitura técnica objetiva para relatório imobiliário',
+    minimalista: 'descrição minimalista, elegante e direta',
+    comercial: 'copy comercial para atendimento e WhatsApp',
+    social: 'texto para social media com impacto e leitura rápida',
+    seo: 'título SEO, meta description e descrição otimizada para Google',
+    ia: 'prompt mestre para outra IA produzir descrição imobiliária',
+    estrategista: 'diagnóstico estratégico do ativo, público-alvo e argumentos de venda'
+  };
+
+  return `Você é especialista em copy imobiliária, SEO semântico e leitura de ativos imobiliários.
+
+Tarefa: produzir ${intentMap[mode] || 'descrição imobiliária'}.
+Tom: ${tone}.
+Tamanho: ${size}.
+Regras: ${noEmoji}; ${safe}; linguagem profissional; transformar atributos em benefícios; evitar promessas absolutas; preservar precisão dos dados.
+
+DADOS DO IMÓVEL:
+${linesOfData(d)}
+
+ENTREGUE:
+- leitura do ativo
+- principais benefícios
+- texto final pronto para uso
+- observações de SEO/IA quando aplicável`;
+}
+
+function buildText(d, mode) {
+  const intro = `${d.tipo || 'Imóvel'}${d.local ? ' em ' + d.local : ''}`;
+  const area = d.areas.length ? ` com ${d.areas.join(', ')}` : '';
+  const comp = d.comodos.length ? `, composto por ${d.comodos.join(', ')}` : '';
+  const voc = d.vocacoes.length ? ` A vocação identificada é ${d.vocacoes.join(', ')}.` : '';
+  const dif = d.diferenciais.length ? ` Entre os pontos de destaque estão ${d.diferenciais.join(', ')}.` : '';
+  const val = d.valorizacao ? ` Potencial de valorização: ${d.valorizacao}.` : '';
+  const benefit = d.beneficio ? `\n\nBenefício central: ${d.beneficio}` : '';
+  const para = d.paraQuem ? `\n\nPara quem é indicado: ${d.paraQuem}` : '';
+
+  const basePremium = `${intro}${area}${comp}. ${voc}${dif}${val}${benefit}${para}`.replace(/\s+/g, ' ').trim();
+
+  const diag = `LEITURA SEMÂNTICA DO ATIVO\n\n${linesOfData(d)}\n\nForça semântica: ${d.forca}/10\n\nInterpretação: ${basePremium}`;
+
+  const prompt = buildPrompt(d, mode);
+  lastPrompt = prompt;
+
+  switch (mode) {
+    case 'tecnico':
+      return `${diag}\n\nTEXTO TÉCNICO\n\nO ativo analisado corresponde a ${intro}${area}${comp}. A leitura dos atributos indica perfil ${d.perfil || 'não informado'}${d.vocacoes.length ? ', com vocação ' + d.vocacoes.join(', ') : ''}. ${dif || ''} ${val || ''}`;
+
+    case 'minimalista':
+      return `${intro}${area}.\n\n${d.vocacoes.length ? 'Um ativo com vocação ' + d.vocacoes.join(', ') + '.\n\n' : ''}${d.diferenciais.length ? 'Destaque para ' + d.diferenciais.join(', ') + '.' : ''}`;
+
+    case 'comercial':
+      return `${intro}${area}${comp}.\n\nIdeal para quem busca ${d.vocacoes.length ? d.vocacoes.join(', ') : 'um imóvel versátil'} com boa leitura de uso. ${d.diferenciais.length ? 'O diferencial está em ' + d.diferenciais.join(', ') + '.' : ''}\n\n${d.preco ? 'Valor informado: ' + d.preco + '.' : ''}`;
+
+    case 'social':
+      return `${intro}.\n\n${d.areas.join('\n')}${d.comodos.length ? '\n' + d.comodos.join('\n') : ''}\n\n${d.vocacoes.length ? 'Um imóvel pensado para ' + d.vocacoes.join(', ') + '.' : ''}\n${d.diferenciais.length ? 'Diferencial: ' + d.diferenciais.join(', ') + '.' : ''}`;
+
+    case 'seo':
+      return `TÍTULO SEO\n${(d.tipo || 'Imóvel')}${d.local ? ' em ' + d.local : ''}${d.areaConstruida ? ' com ' + d.areaConstruida + 'm²' : ''}\n\nMETA DESCRIPTION\n${intro}${area}${comp}. ${d.vocacoes.length ? 'Vocação ' + d.vocacoes.join(', ') + '. ' : ''}${d.diferenciais.length ? 'Destaque para ' + d.diferenciais.slice(0, 2).join(' e ') + '.' : ''}\n\nDESCRIÇÃO SEO\n${basePremium}`;
+
+    case 'ia':
+      return `PROMPT IA GERADO\n\n${prompt}`;
+
+    case 'estrategista':
+      return `${diag}\n\nDIAGNÓSTICO ESTRATÉGICO\n\nPerfil predominante: ${d.vocacoes.join(' + ') || d.perfil || 'não informado'}\nComprador provável: ${d.paraQuem || inferBuyer(d)}\nFator racional: ${d.diferenciais.join(', ') || 'atributos técnicos do imóvel'}\nFator emocional: possibilidade de uso adaptável ao projeto de vida ou negócio\nArgumento principal: ${d.beneficio || 'imóvel com atributos que permitem uma comunicação baseada em utilidade, localização e versatilidade.'}`;
+
+    default: // premium
+      return `DESCRIÇÃO PREMIUM\n\n${basePremium}\n\nPROMPT PARA LAPIDAR EM IA\n\n${prompt}`;
+  }
+}
+
+function inferBuyer(d) {
+  if (d.vocacoes.includes('comercial')) return 'profissional liberal, empresário ou investidor';
+  if (d.vocacoes.includes('residencial')) return 'família ou comprador em busca de moradia';
+  return 'comprador que busca um ativo imobiliário versátil';
+}
+
+// ============================================================
+// Ações principais
+// ============================================================
+function runReader() {
+  try {
+    const { values } = parseJSON();
+    const d = extract(values);
+    const mode = getMode();
+    const text = buildText(d, mode);
+    lastText = text;
+
+    document.getElementById('output').textContent = text;
+    document.getElementById('parseStatus').textContent = 'JSON lido com sucesso.';
+    document.getElementById('parseStatus').className = 'status ok';
+    document.getElementById('countPill').textContent = Object.keys(values).length + ' placeholders';
+    document.getElementById('cTipo').textContent = d.tipo || '—';
+    document.getElementById('cVocacao').textContent = d.vocacoes.join(' + ') || '—';
+    document.getElementById('cForca').textContent = d.forca + '/10';
+    toast('Leitura gerada');
+  } catch (e) {
+    document.getElementById('parseStatus').textContent = 'Erro: ' + e.message;
+    document.getElementById('parseStatus').className = 'status err';
+    toast('Erro ao ler JSON');
+  }
+}
+
+function copyText(txt) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(() => toast('Copiado')).catch(() => fallbackCopy(txt));
+  } else {
+    fallbackCopy(txt);
+  }
+}
+
+function fallbackCopy(txt) {
+  const a = document.getElementById('copyarea');
+  a.value = txt;
+  a.style.display = 'block';
+  a.select();
+  document.execCommand('copy');
+  a.style.display = 'none';
+  toast('Copiado');
+}
+
+function copyResult() {
+  if (!lastText) return toast('Gere antes de copiar');
+  copyText(lastText);
+}
+
+function download(name, txt, type = 'text/plain') {
+  if (!txt) return toast('Nada para baixar');
+  const b = new Blob([txt], { type: type + ';charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(b);
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('Arquivo baixado');
+}
+
+function downloadTxt() {
+  download('joker_leitura_semantica.txt', lastText);
+}
+
+function downloadPrompt() {
+  download('joker_prompt_ia.txt', lastPrompt || '');
+}
+
+function clearAll() {
+  document.getElementById('jsonInput').value = '';
+  lastText = '';
+  lastPrompt = '';
+  document.getElementById('output').innerHTML = '<div class="empty">Cole um JSON e clique em “Ler JSON”.</div>';
+  document.getElementById('parseStatus').textContent = 'Aguardando leitura.';
+  document.getElementById('parseStatus').className = 'status';
+  document.getElementById('countPill').textContent = '0 placeholders';
+  ['cTipo', 'cVocacao', 'cForca'].forEach(id => document.getElementById(id).textContent = '—');
+}
+
+function loadExample() {
+  document.getElementById('jsonInput').value = JSON.stringify({
+    _meta: { tipo: 'preset-taxonomico' },
+    valores: {
+      'JOKER-IMOVEL-IDENTIDADE-TIPO': 'Sobrado',
+      'JOKER-IMOVEL-IDENTIDADE-FINALIDADE': 'Venda',
+      'JOKER-IMOVEL-IDENTIDADE-PERFIL': 'Misto',
+      'JOKER-LOCAL-ENDERECO-CIDADE': 'Nova Santa Rita',
+      'JOKER-LOCAL-ENDERECO-UF': 'RS',
+      'JOKER-IMOVEL-DIMENSAO-AREA_CONSTRUIDA': '331,29',
+      'JOKER-IMOVEL-COMODOS-DORMITORIOS': '3',
+      'JOKER-IMOVEL-COMODOS-BANHEIROS': '5',
+      'JOKER-IMOVEL-EXTERNAS-SALAO_FESTAS': 'sim',
+      'JOKER-USO-VOCACAO-RESIDENCIAL': 'sim',
+      'JOKER-USO-VOCACAO-COMERCIAL': 'sim',
+      'JOKER-USO-VOCACAO-INVESTIMENTO': 'sim',
+      'JOKER-DIFERENCIAIS-LOCALIZACAO-DIF_AVENIDA': 'sim',
+      'JOKER-DIFERENCIAIS-USO-DIF_DUPLA': 'sim',
+      'JOKER-JURIDICO-REGULARIDADE-REGULARIZADO': 'sim',
+      'JOKER-JURIDICO-REGULARIDADE-FINANCIAVEL': 'sim',
+      'JOKER-COPY-NARRATIVA-PRINCIPAL_BENEFICIO': 'versatilidade para moradia, atividade comercial ou investimento patrimonial',
+      'JOKER-COPY-NARRATIVA-PARA_QUEM': 'indicado para famílias, profissionais liberais, empresários e investidores que buscam um imóvel com múltiplas possibilidades de uso'
+    }
+  }, null, 2);
+  runReader();
+}
+
+document.getElementById('fileInput').addEventListener('change', function(e) {
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    document.getElementById('jsonInput').value = ev.target.result;
+    runReader();
+  };
+  r.readAsText(f);
+  e.target.value = '';
+});
+</script>
+</body>
+</html>
